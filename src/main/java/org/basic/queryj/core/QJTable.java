@@ -23,12 +23,7 @@ public class QJTable
 {
 
   private final String name;
-  private String alias;
-
-  protected QJTable(String name)
-  {
-    this.name = name;
-  }
+  private final String alias;
 
   protected QJTable(String name, String alias)
   {

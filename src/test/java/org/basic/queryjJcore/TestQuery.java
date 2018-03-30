@@ -186,10 +186,10 @@ public class TestQuery
             .andWhere("EXISTS (SELECT 1 FROM NewTable nt WHERE nt.refId = t.id AND nt.col = :ntCol1 AND nt.col2 = :ntCol2)",
                     QJParam.p(":ntCol1", 123), QJParam.p(":ntCol2", 23));
 
-    Query query = new Query().from("MyTable", "t")
+    Query query = new Query().distinct(true).from("MyTable", "t")
             .andWhere(and1Query).orWhere(and2Query);
 
-    assertEquals("SELECT * FROM MyTable t WHERE (t.col1 = :r1 AND t.col2 LIKE :r2) OR (t.col3 = :s1 AND t.col4 LIKE :s2 AND EXISTS (SELECT 1 FROM NewTable nt WHERE nt.refId = t.id AND nt.col = :ntCol1 AND nt.col2 = :ntCol2))", query.getSql());
+    assertEquals("SELECT DISTINCT * FROM MyTable t WHERE (t.col1 = :r1 AND t.col2 LIKE :r2) OR (t.col3 = :s1 AND t.col4 LIKE :s2 AND EXISTS (SELECT 1 FROM NewTable nt WHERE nt.refId = t.id AND nt.col = :ntCol1 AND nt.col2 = :ntCol2))", query.getSql());
     assertEquals(6, query.getParams().size());
     assertEquals(1, query.getParams().get(":r1"));
     assertEquals("%My%", query.getParams().get(":r2"));
@@ -206,6 +206,22 @@ public class TestQuery
     assertEquals("SELECT * FROM MyTable t WHERE a = :a AND b = :a", query.getSql());
     assertEquals(1, query.getParams().size());
     assertEquals(1, query.getParams().get(":a"));
+  }
+  
+  @Test
+  public void testGroupBy()
+  {
+    Query query = new Query().select("MAX(id) AS id").from("MyTable", "t").groupBy("t.name");
+    assertEquals("SELECT MAX(id) AS id FROM MyTable t GROUP BY t.name", query.getSql());
+    assertEquals(0, query.getParams().size());
+  }
+  
+  @Test
+  public void testGroupBy2()
+  {
+    Query query = new Query().select("MAX(id) AS id").from("MyTable", "t").groupBy("t.name HAVING COUNT(id) > 1");
+    assertEquals("SELECT MAX(id) AS id FROM MyTable t GROUP BY t.name HAVING COUNT(id) > 1", query.getSql());
+    assertEquals(0, query.getParams().size());
   }
 
   @Test
@@ -324,5 +340,115 @@ public class TestQuery
     assertEquals(2, query.getParams().size());
     assertEquals(1, query.getParams().get(":status"));
     assertEquals(11, query.getParams().get(":val"));
+  }
+  
+  @Test
+  public void testCompare1()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.name", ">My name");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.name LIKE :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals("%My name", query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare2()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.name", "<My name");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.name LIKE :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals("My name%", query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare3()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.name", "<>My name");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE NOT t.name = :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals("My name", query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare4()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.name", "=My name");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.name = :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals("My name", query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare5()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.col", "=10");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.col = :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(10, query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare6()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.col", ">10");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.col > :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(10, query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare7()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.col", ">=10");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.col >= :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(10, query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare8()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.col", "<10");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.col < :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(10, query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare9()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.col", "<=10");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE t.col <= :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(10, query.getParams().get(":p1"));
+  }
+  
+  @Test
+  public void testCompare10()
+  {
+
+    Query query = new Query().select("t.id, t.name").from("MyTable")
+            .andCompare("t.col", "<>10");
+    assertEquals("SELECT t.id, t.name FROM MyTable t WHERE NOT t.col = :p1", query.getSql());
+    assertEquals(1, query.getParams().size());
+    assertEquals(10, query.getParams().get(":p1"));
   }
 }

@@ -252,11 +252,12 @@ public class Query
       try
       {
         int intValue = Integer.parseInt(stringValue);
-        if(operation == null)
+        String not = "<>".equals(operation) ? "NOT " : "";
+        if(operation == null || "<>".equals(operation))
         {
           operation = "=";
         }
-        this.where.add(new QJWhere("AND", field + " " + operation + " " + param));
+        this.where.add(new QJWhere("AND", not + field + " " + operation + " " + param));
         this.params.add(new QJParam(param, intValue));
       }
       catch(NumberFormatException e)
@@ -345,6 +346,12 @@ public class Query
   public Query addParam(String name, Object value)
   {
     this.params.add(QJParam.p(name, value));
+    return this;
+  }
+  
+  public Query distinct(boolean distinct)
+  {
+    this.distinct = distinct;
     return this;
   }
 }
