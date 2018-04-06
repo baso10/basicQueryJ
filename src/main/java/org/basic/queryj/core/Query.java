@@ -131,7 +131,7 @@ public class Query
         sb.append(condition.getCondition());
       }
     }
-    
+
     if(!this.leftJoin.isEmpty())
     {
       for(QJJoin join : leftJoin)
@@ -169,7 +169,7 @@ public class Query
       sb.append(" LIMIT ").append(this.limit);
 
     }
-    if(this.offset != null)
+    if(this.offset != null && this.offset > 0)
     {
       if(this.limit == null)
       {
@@ -226,12 +226,18 @@ public class Query
 
   public Query andCompare(String field, Object value)
   {
+    return andCompare(field, value, String.class);
+  }
+
+  public Query andCompare(String field, Object value, Class classType)
+  {
     if(value == null || "".equals(value) || (value instanceof String && "".equals(((String) value).trim())))
     {
       return this;
     }
 
-    String param = ":" + paramKey + paramIndex++;
+    String param = paramKey + paramIndex++;
+    String operation = null;
     if(value instanceof String)
     {
       String stringValue = (String) value;
@@ -240,74 +246,86 @@ public class Query
       Pattern pattern = Pattern.compile(regex);
       Matcher matcher = pattern.matcher(stringValue);
 
-      String operation = null;
-
       if(matcher.find())
       {
         int end = matcher.end();
         operation = matcher.group();
-        stringValue = stringValue.substring(end);
+        value = stringValue.substring(end);
       }
+    }
 
+    if(Number.class.isAssignableFrom(classType) || value instanceof Number)
+    {
       try
       {
-        int intValue = Integer.parseInt(stringValue);
+
+        if(Integer.class.isAssignableFrom(classType) || value instanceof Integer)
+        {
+          value = Integer.parseInt("" + value);
+        }
+        else if(Long.class.isAssignableFrom(classType) || value instanceof Long)
+        {
+          value = Long.parseLong("" + value);
+        }
+        else if(Double.class.isAssignableFrom(classType) || value instanceof Double)
+        {
+          value = Double.parseDouble("" + value);
+        }
         String not = "<>".equals(operation) ? "NOT " : "";
         if(operation == null || "<>".equals(operation))
         {
           operation = "=";
         }
-        this.where.add(new QJWhere("AND", not + field + " " + operation + " " + param));
-        this.params.add(new QJParam(param, intValue));
+        this.where.add(new QJWhere("AND", not + field + " " + operation + " :" + param));
+        this.params.add(new QJParam(param, value));
+
       }
-      catch(NumberFormatException e)
+      catch(Exception e)
       {
-        //contains by default
-        if(operation == null)
-        {
-          if(stringValue.contains("*"))
-          {
-            //manual like %
-            stringValue = stringValue.replaceAll("\\*", "%");
-          }
-          else
-          {
-            stringValue = "%" + stringValue + "%";
-          }
-          this.where.add(new QJWhere("AND", field + " LIKE " + param));
-          this.params.add(new QJParam(param, stringValue));
-        }
-        else if("=".equals(operation))
-        {
-          this.where.add(new QJWhere("AND", field + " = " + param));
-          this.params.add(new QJParam(param, stringValue));
-        }
-        else if("<>".equals(operation))
-        {
-          this.where.add(new QJWhere("AND", "NOT " + field + " = " + param));
-          this.params.add(new QJParam(param, stringValue));
-        }
-        else if(">".equals(operation))
-        {
-          stringValue = "%" + stringValue;
-          this.where.add(new QJWhere("AND", field + " LIKE " + param));
-          this.params.add(new QJParam(param, stringValue));
-        }
-        else if("<".equals(operation))
-        {
-          stringValue = stringValue + "%";
-          this.where.add(new QJWhere("AND", field + " LIKE " + param));
-          this.params.add(new QJParam(param, stringValue));
-        }
+        e.printStackTrace();
       }
-
     }
-    else if(value instanceof Number)
+    else
     {
-      this.where.add(new QJWhere("AND", field + " = " + param));
-      this.params.add(new QJParam(param, value));
+      String stringValue = "" + value;
+      //contains by default
+      if(operation == null)
+      {
+        if(stringValue.contains("*"))
+        {
+          //manual like %
+          stringValue = stringValue.replaceAll("\\*", "%");
+        }
+        else
+        {
+          stringValue = "%" + stringValue + "%";
+        }
+        this.where.add(new QJWhere("AND", field + " LIKE :" + param));
+        this.params.add(new QJParam(param, stringValue));
+      }
+      else if("=".equals(operation))
+      {
+        this.where.add(new QJWhere("AND", field + " = :" + param));
+        this.params.add(new QJParam(param, stringValue));
+      }
+      else if("<>".equals(operation))
+      {
+        this.where.add(new QJWhere("AND", "NOT " + field + " = :" + param));
+        this.params.add(new QJParam(param, stringValue));
+      }
+      else if(">".equals(operation))
+      {
+        stringValue = "%" + stringValue;
+        this.where.add(new QJWhere("AND", field + " LIKE :" + param));
+        this.params.add(new QJParam(param, stringValue));
+      }
+      else if("<".equals(operation))
+      {
+        stringValue = stringValue + "%";
+        this.where.add(new QJWhere("AND", field + " LIKE :" + param));
+        this.params.add(new QJParam(param, stringValue));
+      }
     }
-
     return this;
   }
 
@@ -348,7 +366,7 @@ public class Query
     this.params.add(QJParam.p(name, value));
     return this;
   }
-  
+
   public Query distinct(boolean distinct)
   {
     this.distinct = distinct;
