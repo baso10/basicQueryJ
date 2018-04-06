@@ -26,7 +26,7 @@ Query and2Query = new Query("s")
         .andCompare("t.col3", "3")
         .andCompare("t.col4", "My4*")
         .andWhere("EXISTS (SELECT 1 FROM NewTable nt WHERE nt.refId = t.id AND nt.col = :ntCol1 AND nt.col2 = :ntCol2)",
-                QJParam.p(":ntCol1", 123), QJParam.p(":ntCol2", 23));
+                QJParam.p("ntCol1", 123), QJParam.p("ntCol2", 23));
 
 Query query = new Query().from("MyTable", "t")
         .andWhere(and1Query).orWhere(and2Query);
@@ -34,7 +34,7 @@ query.getSql();
 ```
 ```
 Query query = new Query().from("MyTable", "t")
-            .innerJoin("JoinTable", "jt", "jt.refId = t.id AND jt.status = :status", QJParam.p(":status", 1))
+            .innerJoin("JoinTable", "jt", "jt.refId = t.id AND jt.status = :status", QJParam.p("status", 1))
             .leftJoin("JoinTable2", "jt2", "jt2.refId = jt.id")
             .limit(10).offset(100);
 query.getSql();  
