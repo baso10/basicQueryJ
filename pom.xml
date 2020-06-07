@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.basic</groupId>
-  <artifactId>queryJ</artifactId>
+  <groupId>ch.baso10</groupId>
+  <artifactId>sqlqueryJ</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   
-  <name>Basic QueryJ</name>
+  <name>SqlQueryJ</name>
   <description>Java library to build SQL queryies.</description>
   <url>https://github.com/baso10/basicQueryJ.git</url>
   <inceptionYear>2018</inceptionYear>
